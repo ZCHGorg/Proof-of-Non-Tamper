@@ -11,4 +11,4 @@ Written by Josef Kulovany
 
 Full Changelog: https://github.com/stealthmachines/Proof-of-Non-Tamper/commits/V0.0.1
 
-Each ascending filename is a slight improvement, similiar to a branch here in Github but wholly less organized ... to all appearances.  Tread through my messy notebook methodically and you may find treasure, skip over this code and you might miss out on a diamond.
+Each ascending filename is a slight improvement, similar to a branch here in Github but wholly less organized ... to all appearances.  Tread through my messy notebook methodically and you may find treasure, skip over this code and you might miss out on a diamond.
