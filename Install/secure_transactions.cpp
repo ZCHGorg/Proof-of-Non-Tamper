@@ -1,4 +1,3 @@
-
 #include <zmq.hpp>
 #include <iostream>
 #include <string>
@@ -10,22 +9,114 @@
 #include <zmq.hpp>
 
 
-// Define the Transaction struct
 struct Transaction {
     std::string sender;
     std::string receiver;
     double amount;
     std::string timestamp;
+    std::vector<std::string> network_addresses;
     // Add more fields as needed
-    Database database;
+    // Database database;
 };
 
-// Placeholder: Implement storing and retrieving transactions in a secure location
+// Serialize a transaction into a trinary string
+std::string serialize_transaction(const Transaction& transaction) {
+    std::string serialized = "";
+    serialized += transaction.sender + ",";
+    serialized += transaction.receiver + ",";
+    serialized += std::to_string(transaction.amount) + ",";
+    serialized += transaction.timestamp + ",";
+    
+    // Serialize network addresses
+    for (const std::string& address : transaction.network_addresses) {
+        serialized += address + ";";
+    }
+    serialized += ",";
+    
+    // Serialize other fields
+    
+    return serialized;
+}
+
+// Deserialize a trinary string into a transaction
+Transaction deserialize_transaction(const std::string& serialized) {
+    Transaction transaction;
+    size_t pos = 0;
+    size_t end;
+    
+    end = serialized.find(",", pos);
+    transaction.sender = serialized.substr(pos, end - pos);
+    pos = end + 1;
+    
+    end = serialized.find(",", pos);
+    transaction.receiver = serialized.substr(pos, end - pos);
+    pos = end + 1;
+    
+    end = serialized.find(",", pos);
+    transaction.amount = std::stod(serialized.substr(pos, end - pos));
+    pos = end + 1;
+    
+    end = serialized.find(",", pos);
+    transaction.timestamp = serialized.substr(pos, end - pos);
+    pos = end + 1;
+    
+    // Deserialize network addresses
+    end = serialized.find(",", pos);
+    std::string addresses_str = serialized.substr(pos, end - pos);
+    size_t addr_pos = 0;
+    while (addr_pos < addresses_str.size()) {
+        size_t addr_end = addresses_str.find(";", addr_pos);
+        transaction.network_addresses.push_back(addresses_str.substr(addr_pos, addr_end - addr_pos));
+        addr_pos = addr_end + 1;
+    }
+    pos = end + 1;
+    
+    // Deserialize other fields
+    
+    return transaction;
+}
+
+Transaction create_transaction(...) {
+    Transaction transaction;
+    // Populate other fields
+    transaction.network_addresses = get_network_addresses(); // Get the list of addresses
+    return transaction;
+}
+
+void broadcast_restructure_instructions(const std::vector<std::string>& network_addresses) {
+    Transaction transaction;
+    // Populate other fields
+    transaction.network_addresses = network_addresses;
+
+    // Serialize the transaction into a string
+    std::string serialized_transaction = serialize_transaction(transaction);
+
+    // Broadcast the transaction using ZeroMQ
+    zmq::message_t zmq_message(serialized_transaction.data(), serialized_transaction.size());
+    socket.send(zmq_message);
+}
+
+void handle_restructure_instructions(const std::string& received_data) {
+    // Deserialize the received data into a Transaction object
+    Transaction transaction = deserialize_transaction(received_data);
+
+    // Update local network configuration using transaction.network_addresses
+    // You might also need to reconfigure ZeroMQ connections
+}
+
+// Placeholder: Implement storing transactions in a secure location
 void store_transaction_locally(const Transaction& transaction) {
-    // You can use a file, database, or any storage mechanism here
-    // For demonstration, let's use a vector as an in-memory storage
-    static std::vector<Transaction> stored_transactions;
-    stored_transactions.push_back(transaction);
+    try {
+        // Serialize the transaction
+        std::string serialized_transaction = serialize_transaction(transaction);
+
+        // Placeholder: Store the serialized transaction securely (e.g., in a file or database)
+        // For demonstration, let's print the serialized transaction
+        std::cout << "Storing transaction locally: " << serialized_transaction << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error storing transaction locally: " << e.what() << std::endl;
+    }
 }
 
 std::vector<Transaction> retrieve_pending_transactions() {
@@ -38,22 +129,55 @@ std::vector<Transaction> retrieve_pending_transactions() {
 }
 
 void process_synchronization_request(const std::string& request) {
-    // Parse the synchronization request
-    std::vector<Transaction> transactions;
-    deserialize_transactions(request, transactions);
+    try {
+        // Deserialize the received synchronization request
+        std::vector<Transaction> transactions;
+        size_t pos = 0;
+        size_t end = request.find(";");
 
-    // Store the transactions locally
-    for (const Transaction& transaction : transactions) {
-        store_transaction_locally(transaction);
+        while (end != std::string::npos) {
+            std::string transaction_str = request.substr(pos, end - pos);
+            transactions.push_back(deserialize_transaction(transaction_str));
+            pos = end + 1;
+            end = request.find(";", pos);
+        }
+
+        // Handle the retrieved transactions
+        for (const Transaction& transaction : transactions) {
+            store_transaction_locally(transaction);
+        }
+
+        std::cout << "Synchronization request processed successfully." << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error processing synchronization request: " << e.what() << std::endl;
     }
 }
     
 namespace Crypto {
 
-    // Placeholder: Implement RSA decryption
+    // RSA decryption
     std::string rsa_decrypt(const std::string& encrypted_data, RSA* private_key) {
         // Implement RSA decryption logic using private key
-        // Return the decrypted data
+        // For example:
+        unsigned char* decrypted = new unsigned char[RSA_size(private_key)];
+        int decrypted_len = RSA_private_decrypt(encrypted_data.size(), reinterpret_cast<const unsigned char*>(encrypted_data.c_str()), decrypted, private_key, RSA_PKCS1_PADDING);
+        std::string decrypted_str(reinterpret_cast<char*>(decrypted), decrypted_len);
+        delete[] decrypted;
+        return decrypted_str;
+    }
+
+    // Verify RSA signature
+    bool verify_signature(const std::string& data, const std::string& signature, RSA* public_key) {
+        EVP_PKEY* evp_pubkey = EVP_PKEY_new();
+        EVP_PKEY_set1_RSA(evp_pubkey, public_key);
+        EVP_MD_CTX* md_ctx = EVP_MD_CTX_new();
+        EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, evp_pubkey);
+        EVP_DigestVerifyUpdate(md_ctx, data.c_str(), data.size());
+        int verify_result = EVP_DigestVerifyFinal(md_ctx, reinterpret_cast<const unsigned char*>(signature.c_str()), signature.size());
+        EVP_MD_CTX_free(md_ctx);
+        EVP_PKEY_free(evp_pubkey);
+        return verify_result == 1;
     }
 
     bool verify_signature(const std::string& bytecode, const std::string& signature, const std::string& public_key) {
@@ -131,7 +255,7 @@ namespace Crypto {
         Transaction transaction;
         deserialize_transaction(decrypted_data, transaction);
 
-        return decrypted_data
+        return decrypted_data;
     }
 
 }
@@ -155,21 +279,30 @@ int main() {
         while (true) {
             zmq::message_t zmq_message;
             socket.recv(&zmq_message);
-            std::string message(static_cast<char*>(zmq_message.data()), zmq_message.size());
+            std::string received_data(static_cast<char*>(zmq_message.data()), zmq_message.size());
 
-            // Placeholder: Handle synchronization request or received transaction
-            if (message == "Sync Request") {
-                process_synchronization_request(message);
-            } else {
-                // Handle received transaction
-                std::vector<Transaction> transactions;
-                // Decrypt the transaction
-                decrypt_transaction(transactions, message, "shared_key");
+            // Decrypt the received data
+            size_t separator_pos = received_data.find(";");
+            std::string encrypted_payload = received_data.substr(0, separator_pos);
+            std::string received_signature = received_data.substr(separator_pos + 1);
 
-                for (const Transaction& transaction : transactions) {
-                    // Store the transaction
+            // Verify the signature using the public key
+            if (Crypto::verify_signature(encrypted_payload, received_signature, public_key)) {
+                // Decrypt the payload using AES
+                std::string decrypted_payload = Crypto::aes_decrypt(encrypted_payload, "AES_ENCRYPTION_KEY");
+
+                // Placeholder: Handle synchronization request or received transaction
+                if (decrypted_payload == "Sync Request") {
+                    process_synchronization_request(decrypted_payload);
+                } else {
+                    // Handle received transaction
+                    Transaction transaction = deserialize_transaction(decrypted_payload);
+
+                    // Store the transaction locally
                     store_transaction_locally(transaction);
                 }
+            } else {
+                std::cerr << "Received data has an invalid signature." << std::endl;
             }
         }
 
