@@ -71,10 +71,9 @@ The decrypted package contains the serialized transaction data.
 ## Processing Decrypted Bytecode:
 
 Once the decrypted bytecode is obtained, it can be processed further. In this implementation, the bytecode is deserialized back into a Transaction object using the deserialize_transaction function from the Serialization namespace.
-The deserialized transaction object can then be used for various purposes, such as updating a local database, validating the transaction, or triggering specific actions based on the transaction details.
-Handling 
+The deserialized transaction object can then be used for various purposes, such as updating a local database, validating the transaction, or triggering specific actions based on the transaction details. 
 
-## Invalid Signatures:
+## Handling Invalid Signatures:
 
 If the received signature is invalid, the node will not proceed with the decryption and processing steps. Instead, it will log an error message indicating that the received data has an invalid signature.
 This behavior helps maintain the security and integrity of the network, as only valid and verified instructions are processed.
