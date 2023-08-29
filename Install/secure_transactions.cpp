@@ -19,62 +19,63 @@ struct Transaction {
     // Database database;
 };
 
-// Serialize a transaction into a trinary string
-std::string serialize_transaction(const Transaction& transaction) {
-    std::string serialized = "";
-    serialized += transaction.sender + ",";
-    serialized += transaction.receiver + ",";
-    serialized += std::to_string(transaction.amount) + ",";
-    serialized += transaction.timestamp + ",";
-    
-    // Serialize network addresses
-    for (const std::string& address : transaction.network_addresses) {
-        serialized += address + ";";
+namespace Serialization {
+    // Serialize a transaction into a trinary string
+    std::string serialize_transaction(const Transaction& transaction) {
+        std::string serialized = "";
+        serialized += transaction.sender + ",";
+        serialized += transaction.receiver + ",";
+        serialized += std::to_string(transaction.amount) + ",";
+        serialized += transaction.timestamp + ",";
+        
+        // Serialize network addresses
+        for (const std::string& address : transaction.network_addresses) {
+            serialized += address + ";";
+        }
+        serialized += ",";
+        
+        // Serialize other fields
+        
+        return serialized;
     }
-    serialized += ",";
-    
-    // Serialize other fields
-    
-    return serialized;
-}
 
-// Deserialize a trinary string into a transaction
-Transaction deserialize_transaction(const std::string& serialized) {
-    Transaction transaction;
-    size_t pos = 0;
-    size_t end;
-    
-    end = serialized.find(",", pos);
-    transaction.sender = serialized.substr(pos, end - pos);
-    pos = end + 1;
-    
-    end = serialized.find(",", pos);
-    transaction.receiver = serialized.substr(pos, end - pos);
-    pos = end + 1;
-    
-    end = serialized.find(",", pos);
-    transaction.amount = std::stod(serialized.substr(pos, end - pos));
-    pos = end + 1;
-    
-    end = serialized.find(",", pos);
-    transaction.timestamp = serialized.substr(pos, end - pos);
-    pos = end + 1;
-    
-    // Deserialize network addresses
-    end = serialized.find(",", pos);
-    std::string addresses_str = serialized.substr(pos, end - pos);
-    size_t addr_pos = 0;
-    while (addr_pos < addresses_str.size()) {
-        size_t addr_end = addresses_str.find(";", addr_pos);
-        transaction.network_addresses.push_back(addresses_str.substr(addr_pos, addr_end - addr_pos));
-        addr_pos = addr_end + 1;
+    // Deserialize a trinary string into a transaction
+    Transaction deserialize_transaction(const std::string& serialized) {
+        Transaction transaction;
+        size_t pos = 0;
+        size_t end;
+        
+        end = serialized.find(",", pos);
+        transaction.sender = serialized.substr(pos, end - pos);
+        pos = end + 1;
+        
+        end = serialized.find(",", pos);
+        transaction.receiver = serialized.substr(pos, end - pos);
+        pos = end + 1;
+        
+        end = serialized.find(",", pos);
+        transaction.amount = std::stod(serialized.substr(pos, end - pos));
+        pos = end + 1;
+        
+        end = serialized.find(",", pos);
+        transaction.timestamp = serialized.substr(pos, end - pos);
+        pos = end + 1;
+        
+        // Deserialize network addresses
+        end = serialized.find(",", pos);
+        std::string addresses_str = serialized.substr(pos, end - pos);
+        size_t addr_pos = 0;
+        while (addr_pos < addresses_str.size()) {
+            size_t addr_end = addresses_str.find(";", addr_pos);
+            transaction.network_addresses.push_back(addresses_str.substr(addr_pos, addr_end - addr_pos));
+            addr_pos = addr_end + 1;
+        }
+        pos = end + 1;
+        
+        // Deserialize other fields
+        
+        return transaction;
     }
-    pos = end + 1;
-    
-    // Deserialize other fields
-    
-    return transaction;
-}
 
 Transaction create_transaction(...) {
     Transaction transaction;
@@ -153,20 +154,19 @@ void process_synchronization_request(const std::string& request) {
         std::cerr << "Error processing synchronization request: " << e.what() << std::endl;
     }
 }
-    
+}
+   
 namespace Crypto {
 
     // RSA decryption
     std::string rsa_decrypt(const std::string& encrypted_data, RSA* private_key) {
-        // Implement RSA decryption logic using private key
-        // For example:
         unsigned char* decrypted = new unsigned char[RSA_size(private_key)];
         int decrypted_len = RSA_private_decrypt(encrypted_data.size(), reinterpret_cast<const unsigned char*>(encrypted_data.c_str()), decrypted, private_key, RSA_PKCS1_PADDING);
         std::string decrypted_str(reinterpret_cast<char*>(decrypted), decrypted_len);
         delete[] decrypted;
         return decrypted_str;
     }
-
+    
     // Verify RSA signature
     bool verify_signature(const std::string& data, const std::string& signature, RSA* public_key) {
         EVP_PKEY* evp_pubkey = EVP_PKEY_new();
@@ -178,14 +178,6 @@ namespace Crypto {
         EVP_MD_CTX_free(md_ctx);
         EVP_PKEY_free(evp_pubkey);
         return verify_result == 1;
-    }
-
-    bool verify_signature(const std::string& bytecode, const std::string& signature, const std::string& public_key) {
-    // Decrypt the signature
-    std::string decrypted_signature = Crypto::rsa_decrypt(signature, private_key);
-
-    // Verify the signature against the bytecode
-    return Crypto::verify_signature(bytecode, decrypted_signature, public_key);
     }
 
     // RSA key pair generation
@@ -214,50 +206,79 @@ namespace Crypto {
         delete[] signature;
         return signature_str;
     }
-
+    
     // AES encryption
     std::string aes_encrypt(const std::string& data, const std::string& key) {
         EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-        EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, reinterpret_cast<const unsigned char*>(key.c_str()), nullptr);
-        EVP_CIPHER_CTX_set_padding(ctx, 1);
-        unsigned char* ciphertext = new unsigned char[data.size() + EVP_CIPHER_block_size(EVP_aes_256_cbc())];
-        int ciphertext_len;
-        EVP_EncryptUpdate(ctx, ciphertext, &ciphertext_len, reinterpret_cast<const unsigned char*>(data.c_str()), data.size());
-        int final_len;
-        EVP_EncryptFinal_ex(ctx, ciphertext + ciphertext_len, &final_len);
+        EVP_CIPHER_CTX_set_padding(ctx, EVP_PADDING_PKCS7);
+
+        unsigned char iv[EVP_MAX_IV_LENGTH];
+        RAND_bytes(iv, EVP_MAX_IV_LENGTH);
+
+        EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, reinterpret_cast<const unsigned char*>(key.c_str()), iv);
+
+        std::string encrypted_data;
+
+        int len;
+        unsigned char buffer[1024];
+        if (EVP_EncryptUpdate(ctx, buffer, &len, reinterpret_cast<const unsigned char*>(data.c_str()), data.size())) {
+            encrypted_data += std::string(reinterpret_cast<char*>(buffer), len);
+        }
+
+        if (EVP_EncryptFinal_ex(ctx, buffer, &len)) {
+            encrypted_data += std::string(reinterpret_cast<char*>(buffer), len);
+        }
+
         EVP_CIPHER_CTX_free(ctx);
-        std::string encrypted_data(reinterpret_cast<char*>(ciphertext), ciphertext_len + final_len);
+
+        // Combine IV and encrypted data
+        std::string encrypted_package = std::string(reinterpret_cast<char*>(iv), EVP_MAX_IV_LENGTH) + encrypted_data;
 
         // Generate a hash of the encrypted data
-        std::string hash = Crypto::sha256(encrypted_data);
+        std::string hash = Crypto::sha256(encrypted_package);
 
         // Encrypt the hash and append it to the encrypted data
-        encrypted_data += hash;
+        encrypted_package += hash;
 
-        return encrypted_data;
+        return encrypted_package;
     }
 
     // Decrypt AES encryption
-    std::string aes_decrypt(const std::string& encrypted_data, const std::string& key) {
-        // Extract the hash from the encrypted data
-        std::string hash = encrypted_data.substr(encrypted_data.size() - 64);
+    std::string aes_decrypt(const std::string& encrypted_package, const std::string& key) {
+        // Extract IV and encrypted data
+        std::string iv_str = encrypted_package.substr(0, EVP_MAX_IV_LENGTH);
+        std::string encrypted_data = encrypted_package.substr(EVP_MAX_IV_LENGTH);
 
-        // Decrypt the encrypted data
-        std::string decrypted_data = Crypto::aes_decrypt(encrypted_data.substr(0, encrypted_data.size() - 64), key);
+        unsigned char iv[EVP_MAX_IV_LENGTH];
+        memcpy(iv, iv_str.c_str(), EVP_MAX_IV_LENGTH);
+
+        EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+        EVP_CIPHER_CTX_set_padding(ctx, EVP_PADDING_PKCS7);
+
+        std::string decrypted_data;
+
+        int len;
+        unsigned char buffer[1024];
+        if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, reinterpret_cast<const unsigned char*>(key.c_str()), iv)) {
+            if (EVP_DecryptUpdate(ctx, buffer, &len, reinterpret_cast<const unsigned char*>(encrypted_data.c_str()), encrypted_data.size())) {
+                decrypted_data += std::string(reinterpret_cast<char*>(buffer), len);
+            }
+        }
+
+        if (EVP_DecryptFinal_ex(ctx, buffer, &len)) {
+            decrypted_data += std::string(reinterpret_cast<char*>(buffer), len);
+        }
+
+        EVP_CIPHER_CTX_free(ctx);
 
         // Check the hash of the decrypted data
         std::string computed_hash = Crypto::sha256(decrypted_data);
-        if (hash != computed_hash) {
+        if (computed_hash != encrypted_package.substr(encrypted_package.size() - 64)) {
             throw std::runtime_error("Transaction hash mismatch");
         }
 
-        // Deserialize the decrypted transaction
-        Transaction transaction;
-        deserialize_transaction(decrypted_data, transaction);
-
         return decrypted_data;
     }
-
 }
 
 int main() {
@@ -268,9 +289,7 @@ int main() {
 
     // Handle errors gracefully
     try {
-        // Placeholder: Use the generated keys for signing and encrypting
-
-        // Placeholder: Simulate sending transactions when back online
+        // Initialize ZeroMQ context and socket
         zmq::context_t context(1);
         zmq::socket_t socket(context, ZMQ_SUB);
         socket.connect("tcp://127.0.0.1:5555");
@@ -283,31 +302,27 @@ int main() {
 
             // Decrypt the received data
             size_t separator_pos = received_data.find(";");
-            std::string encrypted_payload = received_data.substr(0, separator_pos);
+            std::string encrypted_package = received_data.substr(0, separator_pos);
             std::string received_signature = received_data.substr(separator_pos + 1);
 
             // Verify the signature using the public key
-            if (Crypto::verify_signature(encrypted_payload, received_signature, public_key)) {
+            if (Crypto::verify_signature(encrypted_package, received_signature, public_key)) {
                 // Decrypt the payload using AES
-                std::string decrypted_payload = Crypto::aes_decrypt(encrypted_payload, "AES_ENCRYPTION_KEY");
+                std::string decrypted_package = decrypt_bytecode(encrypted_package, "AES_ENCRYPTION_KEY");
 
-                // Placeholder: Handle synchronization request or received transaction
-                if (decrypted_payload == "Sync Request") {
-                    process_synchronization_request(decrypted_payload);
-                } else {
-                    // Handle received transaction
-                    Transaction transaction = deserialize_transaction(decrypted_payload);
+                // Now you can process the decrypted bytecode package
+                // For example, you can deserialize it into a Transaction object
+                Transaction transaction = deserialize_transaction(decrypted_package);
 
-                    // Store the transaction locally
-                    store_transaction_locally(transaction);
-                }
+                // Handle the transaction, update database, etc.
+
             } else {
                 std::cerr << "Received data has an invalid signature." << std::endl;
             }
         }
 
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Error: " << e.what() << std::endl;
     }
 
     RSA_free(private_key);
