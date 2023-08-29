@@ -40,7 +40,7 @@ This C++ code demonstrates a secure transaction processing system using cryptogr
 This code is intended for educational purposes only and should not be used for actual security-sensitive applications without extensive review and proper security measures.
 
 
-How It Works
+## How It Works
 Transaction Structure (struct Transaction): The code defines a Transaction structure to represent a transaction. It includes fields such as sender, receiver, amount, timestamp, and network addresses. This structure holds the essential information about a transaction.
 
 Serialization and Deserialization (namespace Serialization): The code provides functions for serializing a Transaction object into a string format and deserializing a string back into a Transaction object. This allows transactions to be easily converted into a format that can be transmitted over the network and reconstructed at the receiving end.
