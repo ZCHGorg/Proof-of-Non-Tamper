@@ -55,6 +55,27 @@ RSA Cryptography (namespace Crypto): The Crypto namespace includes functions for
 
 Main Function (int main()): The main function sets up ZeroMQ communication, generates an RSA key pair, and begins processing incoming messages. It handles decrypting transactions, verifying their authenticity, and processing them as needed.
 
+## Broadcasting Instructions:
+
+The system broadcasts transaction-related instructions using ZeroMQ. Instructions include serialized transactions, which are represented as trinary strings.
+Before broadcasting, the system serializes a Transaction object using the serialize_transaction function from the Serialization namespace. This serializes the transaction data, including sender, receiver, amount, timestamp, and network addresses.
+The serialized transaction is then broadcasted using ZeroMQ, allowing other nodes in the network to receive and process the transaction instructions.
+Receiving and Decrypting Instructions:
+
+When a node receives a broadcasted instruction through ZeroMQ, it decrypts the received data to extract the encrypted package and the received signature.
+The node verifies the signature using the public key of the sender (using the verify_signature function from the Crypto namespace). This ensures the authenticity and integrity of the instruction.
+If the signature is valid, the node proceeds to decrypt the encrypted package using AES decryption. This involves extracting the initialization vector (IV) and encrypted data from the received encrypted package.
+The decrypted package contains the serialized transaction data.
+Processing Decrypted Bytecode:
+
+Once the decrypted bytecode is obtained, it can be processed further. In this implementation, the bytecode is deserialized back into a Transaction object using the deserialize_transaction function from the Serialization namespace.
+The deserialized transaction object can then be used for various purposes, such as updating a local database, validating the transaction, or triggering specific actions based on the transaction details.
+Handling Invalid Signatures:
+
+If the received signature is invalid, the node will not proceed with the decryption and processing steps. Instead, it will log an error message indicating that the received data has an invalid signature.
+This behavior helps maintain the security and integrity of the network, as only valid and verified instructions are processed.
+By encrypting and signing the bytecode, the network ensures that only authorized participants can broadcast instructions, and other nodes can verify the authenticity and integrity of the received instructions. This approach adds a layer of security to the transaction management process.
+
 ## Use Cases
 Financial Transactions: The primary use case is secure financial transactions. The code demonstrates how transactions can be securely processed, transmitted, and verified, making it suitable for applications like online banking, cryptocurrency transactions, and digital payments.
 
