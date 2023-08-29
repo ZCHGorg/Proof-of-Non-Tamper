@@ -55,7 +55,7 @@ RSA Cryptography (namespace Crypto): The Crypto namespace includes functions for
 
 Main Function (int main()): The main function sets up ZeroMQ communication, generates an RSA key pair, and begins processing incoming messages. It handles decrypting transactions, verifying their authenticity, and processing them as needed.
 
-Use Cases
+## Use Cases
 Financial Transactions: The primary use case is secure financial transactions. The code demonstrates how transactions can be securely processed, transmitted, and verified, making it suitable for applications like online banking, cryptocurrency transactions, and digital payments.
 
 Supply Chain Management: The system can be adapted for secure tracking of goods along the supply chain. Each transaction could represent the movement of a product, and the network can ensure the integrity of data as it travels across different parties.
